@@ -7,43 +7,9 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  isLoading?: boolean;
+  isError?: boolean;
 }
-
-// Static responses for Chinese New Year questions
-const getStaticResponse = (question: string): string => {
-  const lowerQuestion = question.toLowerCase();
-  
-  if (lowerQuestion.includes("春节") || lowerQuestion.includes("chinese new year") || lowerQuestion.includes("spring festival")) {
-    return "🧧 春节快乐！Chinese New Year, also known as Spring Festival (春节), is the most important traditional holiday in Chinese culture. It marks the beginning of the lunar new year and is celebrated with family reunions, feasts, fireworks, and the giving of red envelopes (红包).";
-  }
-  
-  if (lowerQuestion.includes("红包") || lowerQuestion.includes("red envelope") || lowerQuestion.includes("hongbao")) {
-    return "🧧 红包 (Hongbao) are red envelopes containing money given as gifts during Chinese New Year. The red color symbolizes good luck and is believed to ward off evil spirits. They're traditionally given by married couples and elders to children and unmarried adults.";
-  }
-  
-  if (lowerQuestion.includes("生肖") || lowerQuestion.includes("zodiac") || lowerQuestion.includes("animal")) {
-    return "🐉 The Chinese zodiac consists of 12 animals: Rat, Ox, Tiger, Rabbit, Dragon, Snake, Horse, Goat, Monkey, Rooster, Dog, and Pig. Each year is associated with one of these animals, and 2024 is the Year of the Dragon! Dragons symbolize strength, wisdom, and good fortune.";
-  }
-  
-  if (lowerQuestion.includes("饺子") || lowerQuestion.includes("dumpling") || lowerQuestion.includes("food")) {
-    return "🥟 Traditional Chinese New Year foods include dumplings (饺子), fish (鱼), spring rolls, nian gao (年糕 - sticky rice cake), and tangerines. Each food has symbolic meaning - dumplings represent wealth, fish represents abundance, and tangerines represent good luck!";
-  }
-  
-  if (lowerQuestion.includes("舞龙") || lowerQuestion.includes("dragon dance") || lowerQuestion.includes("lion dance")) {
-    return "🐲 Dragon and Lion dances are traditional performances during Chinese New Year celebrations. The dragon dance involves a team of performers manipulating a long, flexible dragon figure, while lion dances feature acrobatic movements. Both are believed to bring good luck and chase away evil spirits!";
-  }
-  
-  if (lowerQuestion.includes("烟花") || lowerQuestion.includes("firework") || lowerQuestion.includes("firecracker")) {
-    return "🎆 Fireworks and firecrackers are an essential part of Chinese New Year celebrations! The loud noises and bright lights are believed to scare away the mythical beast Nian (年兽) and evil spirits, bringing good luck for the new year.";
-  }
-  
-  if (lowerQuestion.includes("传统") || lowerQuestion.includes("tradition") || lowerQuestion.includes("custom")) {
-    return "🏮 Chinese New Year traditions include cleaning the house before the new year, decorating with red lanterns and couplets, family reunion dinners, giving red envelopes, watching dragon dances, and setting off fireworks. The celebration lasts for 15 days, ending with the Lantern Festival!";
-  }
-  
-  // Default response
-  return "🎊 Welcome to the Chinese New Year chatbot! I can tell you about Spring Festival traditions, customs, food, zodiac animals, red envelopes, dragon dances, and much more. Try asking me about any aspect of Chinese New Year celebrations! 新年快乐 (Happy New Year)!";
-};
 
 export default function HomePage() {
   const [messages, setMessages] = useState<Message[]>([
@@ -55,11 +21,11 @@ export default function HomePage() {
     },
   ]);
   const [inputText, setInputText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = () => {
-    if (!inputText.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputText.trim() || isLoading) return;
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputText,
@@ -67,20 +33,72 @@ export default function HomePage() {
       timestamp: new Date(),
     };
 
+    // Add user message
     setMessages(prev => [...prev, userMessage]);
-
-    // Add bot response after a short delay
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: getStaticResponse(inputText),
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, botResponse]);
-    }, 1000);
-
+    
+    // Add loading message
+    const loadingMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      text: "🤔 Thinking...",
+      isUser: false,
+      timestamp: new Date(),
+      isLoading: true,
+    };
+    
+    setMessages(prev => [...prev, loadingMessage]);
+    setIsLoading(true);
+    
+    const currentInput = inputText;
     setInputText("");
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: currentInput }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Remove loading message and add actual response
+      setMessages(prev => {
+        const withoutLoading = prev.filter(msg => !msg.isLoading);
+        return [
+          ...withoutLoading,
+          {
+            id: (Date.now() + 2).toString(),
+            text: data.response,
+            isUser: false,
+            timestamp: new Date(data.timestamp),
+          },
+        ];
+      });
+    } catch (error) {
+      console.error("Error calling chat API:", error);
+      
+      // Remove loading message and add error message
+      setMessages(prev => {
+        const withoutLoading = prev.filter(msg => !msg.isLoading);
+        return [
+          ...withoutLoading,
+          {
+            id: (Date.now() + 2).toString(),
+            text: "🚫 Sorry, I encountered an error while processing your message. Please try again!",
+            isUser: false,
+            timestamp: new Date(),
+            isError: true,
+          },
+        ];
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -124,13 +142,32 @@ export default function HomePage() {
                 className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
                   message.isUser
                     ? "bg-yellow-500 text-red-900 ml-auto"
+                    : message.isError
+                    ? "bg-red-600 text-yellow-100 mr-auto border border-red-400"
+                    : message.isLoading
+                    ? "bg-red-700/50 text-yellow-100 mr-auto border border-yellow-400/30 animate-pulse"
                     : "bg-red-700/90 text-yellow-100 mr-auto border border-yellow-400/30"
                 }`}
               >
-                <p className="text-sm leading-relaxed">{message.text}</p>
-                <p className="text-xs mt-2 opacity-70">
-                  {message.timestamp.toLocaleTimeString()}
+                <p className="text-sm leading-relaxed">
+                  {message.isLoading ? (
+                    <span className="flex items-center space-x-2">
+                      <span>🤔 Thinking</span>
+                      <span className="flex space-x-1">
+                        <span className="w-1 h-1 bg-yellow-300 rounded-full animate-bounce"></span>
+                        <span className="w-1 h-1 bg-yellow-300 rounded-full animate-bounce" style={{animationDelay: "0.1s"}}></span>
+                        <span className="w-1 h-1 bg-yellow-300 rounded-full animate-bounce" style={{animationDelay: "0.2s"}}></span>
+                      </span>
+                    </span>
+                  ) : (
+                    message.text
+                  )}
                 </p>
+                {!message.isLoading && (
+                  <p className="text-xs mt-2 opacity-70">
+                    {message.timestamp.toLocaleTimeString()}
+                  </p>
+                )}
               </div>
             </div>
           ))}
@@ -145,14 +182,15 @@ export default function HomePage() {
               onChange={(e) => setInputText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask me about Chinese New Year traditions... 问我关于春节的传统..."
-              className="flex-1 px-4 py-3 rounded-full bg-yellow-100 text-red-900 placeholder-red-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-all"
+              className="flex-1 px-4 py-3 rounded-full bg-yellow-100 text-red-900 placeholder-red-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-all disabled:opacity-50"
+              disabled={isLoading}
             />
             <button
               onClick={handleSendMessage}
-              disabled={!inputText.trim()}
+              disabled={!inputText.trim() || isLoading}
               className="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 disabled:bg-yellow-600 disabled:opacity-50 text-red-900 font-semibold rounded-full transition-all glow-animation focus:outline-none focus:ring-2 focus:ring-yellow-300"
             >
-              发送
+              {isLoading ? "..." : "发送"}
             </button>
           </div>
           
@@ -168,7 +206,8 @@ export default function HomePage() {
               <button
                 key={suggestion}
                 onClick={() => setInputText(suggestion)}
-                className="px-3 py-1 text-xs bg-yellow-200 hover:bg-yellow-300 text-red-800 rounded-full transition-all"
+                disabled={isLoading}
+                className="px-3 py-1 text-xs bg-yellow-200 hover:bg-yellow-300 text-red-800 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {suggestion}
               </button>
