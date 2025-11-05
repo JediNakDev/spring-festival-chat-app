@@ -257,7 +257,7 @@ export default function HomePage({ language }: HomePageProps) {
             </h3>
             <div className="space-y-5 text-gray-800" style={{fontFamily: 'var(--font-poppins)'}}>
               <p className="text-center italic text-xl leading-relaxed font-semibold text-red-700">
-                "{t.quote}"
+                {`"${t.quote}"`}
               </p>
               <p className="text-base leading-relaxed text-gray-900">
                 {t.culturalHeritageText}

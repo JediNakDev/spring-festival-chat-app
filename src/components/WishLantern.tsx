@@ -1,13 +1,19 @@
 "use client";
 import { useState } from "react";
 
+type Lantern = {
+  id: number;
+  wish: string;
+  color: string;
+  pattern: "solid" | "stripes" | "dots";
+  offset: number;
+};
+
 export default function WishLantern({ language }: { language: "en" | "zh" }) {
   const [wish, setWish] = useState("");
   const [color, setColor] = useState("#dc2626");
   const [pattern, setPattern] = useState<"solid" | "stripes" | "dots">("solid");
-  const [lanterns, setLanterns] = useState<
-    { id: number; wish: string; color: string; pattern: string; offset: number }[]
-  >([
+  const [lanterns, setLanterns] = useState<Lantern[]>([
     { id: 1, wish: "Peace", color: "#dc2626", pattern: "solid", offset: -15 },
     { id: 2, wish: "Happiness", color: "#f59e0b", pattern: "stripes", offset: 0 },
     { id: 3, wish: "Fortune", color: "#ec4899", pattern: "dots", offset: 15 },
@@ -64,7 +70,7 @@ export default function WishLantern({ language }: { language: "en" | "zh" }) {
       {/* Floating sparkles and decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {/* Glowing orbs */}
-        {[...Array(40)].map((_, i) => (
+  {Array.from({ length: 40 }).map((_, i) => (
           <div
             key={i}
             className="absolute rounded-full bg-yellow-300 opacity-60 blur-sm animate-pulse"
@@ -140,7 +146,7 @@ export default function WishLantern({ language }: { language: "en" | "zh" }) {
                     {/* Inner glow */}
                     <div className="absolute inset-2 bg-gradient-to-b from-yellow-200/30 to-transparent rounded-full blur-md animate-pulse"></div>
                     {/* Vertical decorative lines */}
-                    {[...Array(4)].map((_, i) => (
+                    {Array.from({ length: 4 }).map((_, i) => (
                       <div
                         key={i}
                         className="absolute h-full w-0.5 bg-yellow-900/40"
