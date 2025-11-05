@@ -1,33 +1,130 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif: ui-serif, Georgia, "Times New Roman", serif;
   
-  /* Chinese New Year Color Palette */
-  --color-cny-red: #dc2626;
-  --color-cny-gold: #fbbf24;
-  --color-cny-dark-red: #991b1b;
-  --color-cny-light-gold: #fef3c7;
-  --color-cny-bg: #1f1f1f;
-  --color-cny-card: #2d2d2d;
+  /* Traditional Chinese Spring Festival Color Palette */
+  --color-cny-red: #c41e3a;
+  --color-cny-gold: #d4af37;
+  --color-cny-dark-red: #8b0000;
+  --color-cny-cream: #faf5f0;
+  --color-cny-dark: #2d1810;
+  --color-cny-paper: #f5ede0;
 }
 
-/* Custom animations for Chinese New Year */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+body {
+  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 }
 
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 5px #fbbf24; }
-  50% { box-shadow: 0 0 20px #fbbf24, 0 0 30px #fbbf24; }
+/* Traditional ornamental borders and patterns */
+@keyframes lantern-sway {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(0.5deg); }
 }
 
-.float-animation {
-  animation: float 3s ease-in-out infinite;
+@keyframes fade-in-slow {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.glow-animation {
-  animation: glow 2s ease-in-out infinite;
+.lantern-sway {
+  animation: lantern-sway 3s ease-in-out infinite;
+}
+
+.ornamental-divider {
+  background: linear-gradient(90deg, transparent 0%, var(--color-cny-gold) 20%, var(--color-cny-gold) 80%, transparent 100%);
+  height: 2px;
+  margin: 1.5rem 0;
+}
+
+.ornamental-corner {
+  position: relative;
+}
+
+.ornamental-corner::before,
+.ornamental-corner::after {
+  content: '✦';
+  color: var(--color-cny-gold);
+  font-size: 0.75rem;
+  position: absolute;
+}
+
+.ornamental-corner::before {
+  top: 0.5rem;
+  left: 0.5rem;
+}
+
+.ornamental-corner::after {
+  bottom: 0.5rem;
+  right: 0.5rem;
+}
+
+/* Traditional calligraphy-style text */
+.calligraphy-text {
+  font-family: Georgia, serif;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+/* Paper texture background */
+.paper-texture {
+  background-image: 
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139, 0, 0, 0.03) 2px, rgba(139, 0, 0, 0.03) 4px),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(212, 175, 55, 0.02) 2px, rgba(212, 175, 55, 0.02) 4px);
+}
+
+/* Traditional red envelope style */
+.hongbao-style {
+  background: linear-gradient(135deg, var(--color-cny-red) 0%, #a01830 100%);
+  border: 2px solid var(--color-cny-gold);
+  box-shadow: 0 4px 15px rgba(196, 30, 58, 0.3), inset 0 1px 0 rgba(212, 175, 55, 0.3);
+}
+
+/* Traditional ink style button */
+.ink-button {
+  background-color: var(--color-cny-dark);
+  color: var(--color-cny-gold);
+  border: 2px solid var(--color-cny-gold);
+  transition: all 0.3s ease;
+}
+
+.ink-button:hover {
+  background-color: var(--color-cny-red);
+  color: white;
+  box-shadow: 0 4px 12px rgba(196, 30, 58, 0.4);
+}
+
+/* Gold accent */
+.gold-accent {
+  color: var(--color-cny-gold);
+}
+
+.gold-border {
+  border-color: var(--color-cny-gold);
+}
+
+/* Text color improvements for readability */
+.text-red-bg {
+  color: #fff7f0;
+  font-weight: 500;
+}
+
+.text-gold-accent {
+  color: #ffd700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.text-dark-on-light {
+  color: #2d1810;
+}
+
+.text-contrast-light {
+  color: #f5ede0;
+}
+
+.text-readable-dark {
+  color: #3d2817;
+  font-weight: 500;
 }
