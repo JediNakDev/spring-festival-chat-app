@@ -13,7 +13,7 @@ interface Message {
   timestamp: Date;
 }
 
-// Static responses for festival questions
+// Static responses for festival questions (fallback if API fails)
 const getStaticResponse = (question: string): string => {
   const lowerQuestion = question.toLowerCase();
   
@@ -67,8 +67,37 @@ export default function Chatbot({ language }: ChatbotProps) {
     },
   ]);
   const [inputText, setInputText] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSendMessage = () => {
+  const sendToApi = async (message: string) => {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.error || `Request failed with status ${res.status}`);
+      }
+
+      const data: { response?: string; result?: string; timestamp?: string } = await res.json();
+      return {
+        text: data.response ?? data.result ?? getStaticResponse(message),
+        timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+      };
+    } catch (err: any) {
+      return {
+        text: `⚠️ Using fallback: ${getStaticResponse(message)}`,
+        timestamp: new Date(),
+      };
+    }
+  };
+
+  const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
     const userMessage: Message = {
@@ -80,15 +109,16 @@ export default function Chatbot({ language }: ChatbotProps) {
 
     setMessages(prev => [...prev, userMessage]);
 
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: getStaticResponse(inputText),
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, botResponse]);
-    }, 1000);
+    setIsSending(true);
+    const result = await sendToApi(inputText);
+    const botResponse: Message = {
+      id: (Date.now() + 1).toString(),
+      text: result.text,
+      isUser: false,
+      timestamp: result.timestamp,
+    };
+    setMessages(prev => [...prev, botResponse]);
+    setIsSending(false);
 
     setInputText("");
   };
@@ -96,7 +126,7 @@ export default function Chatbot({ language }: ChatbotProps) {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      void handleSendMessage();
     }
   };
 
@@ -170,12 +200,12 @@ export default function Chatbot({ language }: ChatbotProps) {
               style={{fontFamily: 'var(--font-poppins)'}}
             />
             <button
-              onClick={handleSendMessage}
-              disabled={!inputText.trim()}
+              onClick={() => void handleSendMessage()}
+              disabled={!inputText.trim() || isSending}
               className="rounded-lg bg-red-700 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
               style={{fontFamily: 'var(--font-poppins)'}}
             >
-              {language === "en" ? "Send" : "发送"}
+              {isSending ? (language === "en" ? "Sending..." : "发送中...") : (language === "en" ? "Send" : "发送")}
             </button>
           </div>
         </div>
